@@ -1,2 +1,9 @@
-# mock-exams-win
-One-liner Windows bootstrap for mock-exams (Docker Desktop K8s + mockctl-web)
+# mock-exams Windows bootstrap
+
+Prerequisite: Docker Desktop running with Kubernetes enabled.
+
+```powershell
+irm https://raw.githubusercontent.com/FedorArbuzov/mock-exams-win/main/windows-mockctl-web.ps1 | iex
+```
+
+Then open http://127.0.0.1:8091/
