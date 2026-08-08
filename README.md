@@ -10,7 +10,7 @@ All you need:
 
 After that, open the browser and go through lessons and interactive labs (Start / Check / Cleanup) against a real local cluster.
 
-No cloud account. No admin rights. About **5 GB** free disk and internet for the first image pull.
+No cloud account. No subscription. No admin rights. About **5 GB** free disk and internet for the first image pull.
 
 ---
 
