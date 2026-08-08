@@ -1,6 +1,6 @@
 # mockctl-setup
 
-**Learn Kubernetes and other tech hands-on — without setting up a complicated lab yourself.**
+**Learn Kubernetes and other tech hands-on — without setting up a complicated lab yourself or paying monthly for a cloud sandbox.**
 
 All you need:
 
