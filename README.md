@@ -56,7 +56,7 @@ Nodes should be **Ready**.
 
 ---
 
-## Step 3. One command
+## Step 3. One command (courses UI)
 
 ### Windows (PowerShell)
 
@@ -90,7 +90,41 @@ OK  http://127.0.0.1:8091/
 
 ---
 
-## Stop
+## Optional: GitLab (CI/CD courses)
+
+Needs **Docker** and about **4–6 GB RAM** free (first boot **5–15 minutes**). Kubernetes is optional for pure CI labs; for deploy-to-cluster labs enable Kubernetes as in Step 2.
+
+### Windows (PowerShell)
+
+```powershell
+irm https://raw.githubusercontent.com/FedorArbuzov/mockctl-setup/main/windows-gitlab-up.ps1 | iex
+```
+
+### macOS / Linux
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/FedorArbuzov/mockctl-setup/main/unix-gitlab-up.sh | bash
+```
+
+Then open **http://localhost:8929/** — login `root`. Password:
+
+```bash
+docker exec mock-gitlab grep 'Password:' /etc/gitlab/initial_root_password
+```
+
+The script starts GitLab CE + a Docker runner and tries to register tags `docker`, `local`.
+
+Stop (keep data):
+
+```bash
+docker compose -f "$HOME/.mock-exams/gitlab/docker-compose.yml" down
+```
+
+Windows path: `$env:USERPROFILE\.mock-exams\gitlab\docker-compose.yml`
+
+---
+
+## Stop courses UI
 
 ```bash
 docker rm -f mockctl-web
@@ -100,7 +134,7 @@ Kubernetes in Docker Desktop stays enabled.
 
 ---
 
-## Optional settings
+## Optional settings (courses UI)
 
 | Variable | Meaning | Default |
 |----------|---------|---------|
@@ -120,6 +154,8 @@ Kubernetes in Docker Desktop stays enabled.
 | Enable Kubernetes… | Settings → Kubernetes → enable, wait for Ready |
 | Browser: site can't be reached | `docker pull …/mockctl-web:latest`, remove container, rerun one-liner |
 | Port 8091 busy | Set `MOCKCTL_WEB_PORT` (see above) |
+| GitLab 502 for a long time | Wait — first boot 5–15 min; `docker exec mock-gitlab gitlab-ctl status` |
+| GitLab OOM / very slow | Free RAM (4–6 GB+) or increase Docker Desktop memory |
 
 ---
 
@@ -127,9 +163,12 @@ Kubernetes in Docker Desktop stays enabled.
 
 | File | Purpose |
 |------|---------|
-| [`windows-mockctl-web.ps1`](windows-mockctl-web.ps1) | Windows bootstrap |
-| [`unix-mockctl-web.sh`](unix-mockctl-web.sh) | macOS / Linux bootstrap |
-| [`docs/mockctl.md`](docs/mockctl.md) | Optional **CLI** (`mockctl`) notes — minikube-era tool; **not** required for the Docker Desktop path above |
+| [`windows-mockctl-web.ps1`](windows-mockctl-web.ps1) | Courses UI bootstrap (Windows) |
+| [`unix-mockctl-web.sh`](unix-mockctl-web.sh) | Courses UI bootstrap (macOS / Linux) |
+| [`windows-gitlab-up.ps1`](windows-gitlab-up.ps1) | GitLab + runner bootstrap (Windows) |
+| [`unix-gitlab-up.sh`](unix-gitlab-up.sh) | GitLab + runner bootstrap (macOS / Linux) |
+| [`gitlab/docker-compose.yml`](gitlab/docker-compose.yml) | GitLab CE compose used by the scripts |
+| [`docs/mockctl.md`](docs/mockctl.md) | Legacy **CLI** notes — not required |
 
 ---
 

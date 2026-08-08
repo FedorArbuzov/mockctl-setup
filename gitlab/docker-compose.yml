@@ -1,0 +1,41 @@
+# GitLab CE + Docker executor runner (local labs)
+# Needs: Docker, ~4–6 GB RAM for GitLab (8+ GB comfortable with Kubernetes)
+
+services:
+  gitlab:
+    image: gitlab/gitlab-ce:latest
+    container_name: mock-gitlab
+    hostname: gitlab.local
+    ports:
+      - "8929:80"
+      - "2222:22"
+    environment:
+      GITLAB_OMNIBUS_CONFIG: |
+        external_url 'http://localhost:8929'
+        gitlab_rails['gitlab_shell_ssh_port'] = 2222
+        nginx['listen_port'] = 80
+        gitlab_rails['time_zone'] = 'UTC'
+        prometheus_monitoring['enable'] = false
+        gitlab_rails['allow_runner_registration_token'] = true
+    volumes:
+      - gitlab-config:/etc/gitlab
+      - gitlab-logs:/var/log/gitlab
+      - gitlab-data:/var/opt/gitlab
+    shm_size: "256m"
+    restart: unless-stopped
+
+  gitlab-runner:
+    image: gitlab/gitlab-runner:latest
+    container_name: mock-gitlab-runner
+    depends_on:
+      - gitlab
+    volumes:
+      - gitlab-runner-config:/etc/gitlab-runner
+      - /var/run/docker.sock:/var/run/docker.sock
+    restart: unless-stopped
+
+volumes:
+  gitlab-config:
+  gitlab-logs:
+  gitlab-data:
+  gitlab-runner-config:
