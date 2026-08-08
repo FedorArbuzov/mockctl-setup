@@ -1,6 +1,6 @@
 # Docker Desktop K8s + mockctl-web in one shot.
 #
-#   irm https://raw.githubusercontent.com/FedorArbuzov/mock-exams-win/main/windows-mockctl-web.ps1 | iex
+#   irm https://raw.githubusercontent.com/FedorArbuzov/mockctl-setup/main/windows-mockctl-web.ps1 | iex
 #
 # Before running: Docker Desktop -> Settings -> Kubernetes -> Create cluster.
 

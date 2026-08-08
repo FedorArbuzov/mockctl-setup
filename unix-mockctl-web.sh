@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Docker Desktop K8s + mockctl-web in one shot.
 #
-#   curl -fsSL https://raw.githubusercontent.com/FedorArbuzov/mock-exams-win/main/unix-mockctl-web.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/FedorArbuzov/mockctl-setup/main/unix-mockctl-web.sh | bash
 #
 # Before running: Docker Desktop -> Settings -> Kubernetes -> Enable Kubernetes.
 

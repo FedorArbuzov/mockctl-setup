@@ -61,7 +61,7 @@ Nodes should be **Ready**.
 ### Windows (PowerShell)
 
 ```powershell
-irm https://raw.githubusercontent.com/FedorArbuzov/mock-exams-win/main/windows-mockctl-web.ps1 | iex
+irm https://raw.githubusercontent.com/FedorArbuzov/mockctl-setup/main/windows-mockctl-web.ps1 | iex
 ```
 
 If execution policy blocks scripts:
@@ -73,7 +73,7 @@ Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
 ### macOS / Linux
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/FedorArbuzov/mock-exams-win/main/unix-mockctl-web.sh | bash
+curl -fsSL https://raw.githubusercontent.com/FedorArbuzov/mockctl-setup/main/unix-mockctl-web.sh | bash
 ```
 
 Expected:
