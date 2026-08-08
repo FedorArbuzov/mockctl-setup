@@ -1,18 +1,24 @@
-# mock-exams — local Kubernetes courses
+# mockctl-setup
 
-Hands-on Kubernetes (and related) labs in the browser, against **Docker Desktop Kubernetes**.
+**Learn Kubernetes and other tech hands-on — without setting up a complicated lab yourself.**
 
-No admin rights required. You need internet access and about **5 GB** free disk.
+All you need:
 
-> **LinkedIn / share link:** this README is the public setup guide.
+1. Install **Docker Desktop**
+2. Turn on **Kubernetes** inside it
+3. Run **one command**
+
+After that, open the browser and go through lessons and interactive labs (Start / Check / Cleanup) against a real local cluster.
+
+No cloud account. No admin rights. About **5 GB** free disk and internet for the first image pull.
 
 ---
 
-## What you get
+## What happens after the one command
 
-1. Docker Desktop Kubernetes on your machine  
-2. One command that starts **`mockctl-web`** (courses UI + `kubectl` in a container)  
-3. Open **http://127.0.0.1:8091/** — lessons, labs, Start / Check / Cleanup  
+The script starts **`mockctl-web`**: a small container with the courses UI and `kubectl`. It talks to your Docker Desktop Kubernetes.
+
+Then open: **http://127.0.0.1:8091/**
 
 Image: `ghcr.io/fedorarbuzov/mock-exams/mockctl-web:latest`
 
@@ -32,16 +38,13 @@ Start Docker Desktop and wait until status is **Docker is running**.
 docker info
 ```
 
-<!-- Screenshot: Docker Desktop running -->
-<!-- ![Docker Desktop running](docs/screenshots/01-docker-running.png) -->
-
 ---
 
 ## Step 2. Enable Kubernetes
 
-1. Open **Docker Desktop** → **Settings** → **Kubernetes**  
-2. Enable **Kubernetes**  
-3. **Apply & Restart** / **Create cluster**  
+1. Open **Docker Desktop** → **Settings** → **Kubernetes**
+2. Enable **Kubernetes**
+3. **Apply & Restart** / **Create cluster**
 4. Wait until the cluster is ready (1–3 minutes)
 
 ```bash
@@ -50,9 +53,6 @@ kubectl get nodes
 ```
 
 Nodes should be **Ready**.
-
-<!-- Screenshot: Kubernetes enabled -->
-<!-- ![Kubernetes ready](docs/screenshots/02-k8s-ready.png) -->
 
 ---
 
@@ -82,17 +82,11 @@ Expected:
 OK  http://127.0.0.1:8091/
 ```
 
-<!-- Screenshot: terminal OK line -->
-<!-- ![Bootstrap OK](docs/screenshots/03-bootstrap-ok.png) -->
-
 ---
 
 ## Step 4. Open courses
 
 **http://127.0.0.1:8091/**
-
-<!-- Screenshot: courses UI -->
-<!-- ![Courses UI](docs/screenshots/04-courses-ui.png) -->
 
 ---
 
@@ -136,17 +130,6 @@ Kubernetes in Docker Desktop stays enabled.
 | [`windows-mockctl-web.ps1`](windows-mockctl-web.ps1) | Windows bootstrap |
 | [`unix-mockctl-web.sh`](unix-mockctl-web.sh) | macOS / Linux bootstrap |
 | [`docs/mockctl.md`](docs/mockctl.md) | Optional **CLI** (`mockctl`) notes — minikube-era tool; **not** required for the Docker Desktop path above |
-
----
-
-## Screenshots for LinkedIn
-
-Add PNGs under [`docs/screenshots/`](docs/screenshots/) and uncomment the image lines in this README:
-
-1. Docker Desktop running  
-2. Kubernetes Ready (`kubectl get nodes`)  
-3. Bootstrap `OK http://127.0.0.1:8091/`  
-4. Courses UI in the browser  
 
 ---
 
