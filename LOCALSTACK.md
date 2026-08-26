@@ -163,7 +163,7 @@ docker rm -f mockctl-web
 
 | Symptom | What to do |
 |---------|------------|
-| `irm : 404` | This file was missing on GitHub — pull latest `main` or re-run the one-liner after this repo is updated |
+| `irm : 404` | Confirm you are on `main` and the URL is `.../mockctl-setup/main/windows-localstack-up.ps1` |
 | `License activation failed` / `LOCALSTACK_AUTH_TOKEN` | You pulled `localstack/localstack:latest`. This stack pins **3.8**. Delete the compose file under `.mock-exams/localstack/` and re-run the one-liner |
 | `connection refused :4566` | Start Docker Desktop, re-run the one-liner |
 | Port 4566 already in use | Stop the other LocalStack: `docker ps` then `docker compose … down` |
