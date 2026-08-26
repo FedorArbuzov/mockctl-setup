@@ -83,6 +83,34 @@ terraform version
 
 ---
 
+## Install AWS CLI v2
+
+Interactive **Check** shells out to `aws` (same idea as `kubectl` in Kubernetes labs). It talks to LocalStack, not a real AWS account.
+
+- **Docker courses UI** (`windows-courses-ui.ps1` / `unix-courses-ui.sh`): CLI is already in the container. Host install is still useful for `aws s3 ls` and the finale script.
+- **`mockctl web` on the laptop:** `aws` **must** be on your PATH, or Check fails with `aws not found`.
+
+Official installer: [AWS CLI v2](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html).
+
+**Windows** (PowerShell):
+
+```powershell
+winget install --id Amazon.AWSCLI -e
+```
+
+Open a **new** terminal, then `aws --version`.
+
+**macOS:**
+
+```bash
+brew install awscli
+aws --version
+```
+
+**Linux:** follow the AWS install page (zip or distro package).
+
+---
+
 ## Fake AWS credentials (for this course)
 
 LocalStack accepts any keys. In the same terminal you use for `terraform` / `aws`:
@@ -101,7 +129,11 @@ $env:AWS_SECRET_ACCESS_KEY = "test"
 $env:AWS_DEFAULT_REGION = "us-east-1"
 ```
 
-AWS CLI v2 is optional on the host (`aws --endpoint-url=http://localhost:4566 s3 ls`). Interactive Check in the UI uses AWS CLI **inside** the courses container.
+Smoke test (host CLI):
+
+```bash
+aws --endpoint-url=http://localhost:4566 s3 ls
+```
 
 ---
 
@@ -182,7 +214,8 @@ docker rm -f mockctl-web
 | `License activation failed` / `LOCALSTACK_AUTH_TOKEN` | You pulled `localstack/localstack:latest`. This stack pins **3.8**. Delete the compose file under `.mock-exams/localstack/` and re-run the one-liner |
 | `connection refused :4566` | Start Docker Desktop, re-run the one-liner |
 | Port 4566 already in use | Stop the other LocalStack: `docker ps` then `docker compose … down` |
-| `winget` finds no package | Exact id: `Hashicorp.Terraform` (not `HashiCorp.Terraform`). Or download the zip from the HashiCorp install page |
+| `winget` finds no package | Terraform: `Hashicorp.Terraform`. AWS CLI: `Amazon.AWSCLI`. Or use the official installers |
+| `aws not found in PATH` on Check | Install AWS CLI v2 on the **same machine** that runs `mockctl web`. Docker UI already has it — this error is from a host `mockctl web` |
 | Courses UI asks to enable Kubernetes | You used the **K8s** one-liner from [README.md](README.md). Use `windows-courses-ui.ps1` / `unix-courses-ui.sh` instead |
 | Interactive Check cannot reach LocalStack | LocalStack must be up on the host (`:4566`). Re-run the LocalStack one-liner |
 | Check fails after `destroy` | Check looks at LocalStack. Apply first, Check, then destroy |
