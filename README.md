@@ -16,7 +16,7 @@ No cloud account. No subscription. No admin rights. About **5 GB** free disk and
 
 | Course | Guide |
 |--------|--------|
-| AWS + Terraform (LocalStack) | [LOCALSTACK.md](LOCALSTACK.md) |
+| AWS + Terraform (LocalStack, **no Kubernetes**) | [LOCALSTACK.md](LOCALSTACK.md) |
 | GitLab CI/CD | [GITLAB.md](GITLAB.md) |
 
 ---
@@ -134,9 +134,11 @@ Kubernetes in Docker Desktop stays enabled.
 
 | File | Purpose |
 |------|---------|
-| [`windows-mockctl-web.ps1`](windows-mockctl-web.ps1) | Windows bootstrap (courses UI) |
-| [`unix-mockctl-web.sh`](unix-mockctl-web.sh) | macOS / Linux bootstrap (courses UI) |
-| [`LOCALSTACK.md`](LOCALSTACK.md) | AWS + Terraform labs (LocalStack one-liner) |
+| [`windows-mockctl-web.ps1`](windows-mockctl-web.ps1) | Windows bootstrap — **Kubernetes courses** (needs a cluster) |
+| [`unix-mockctl-web.sh`](unix-mockctl-web.sh) | macOS / Linux bootstrap — **Kubernetes courses** |
+| [`windows-courses-ui.ps1`](windows-courses-ui.ps1) | Courses UI **without** Kubernetes (Terraform / LocalStack) |
+| [`unix-courses-ui.sh`](unix-courses-ui.sh) | Same, macOS / Linux |
+| [`LOCALSTACK.md`](LOCALSTACK.md) | AWS + Terraform labs |
 | [`GITLAB.md`](GITLAB.md) | GitLab CI/CD labs |
 | [`docs/mockctl.md`](docs/mockctl.md) | Optional **CLI** (`mockctl`) notes — minikube-era tool; **not** required for the Docker Desktop path above |
 

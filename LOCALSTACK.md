@@ -101,19 +101,34 @@ $env:AWS_SECRET_ACCESS_KEY = "test"
 $env:AWS_DEFAULT_REGION = "us-east-1"
 ```
 
-AWS CLI v2 is optional (handy for `aws --endpoint-url=http://localhost:4566 s3 ls` and for **Interactive Check** in the courses UI).
+AWS CLI v2 is optional on the host (`aws --endpoint-url=http://localhost:4566 s3 ls`). Interactive Check in the UI uses AWS CLI **inside** the courses container.
 
 ---
 
 ## Courses UI (lessons + Interactive Check)
 
-Labs live in the **courses** app (same as Kubernetes basic):
+Skip the [main README](README.md) one-liner — that path needs Kubernetes. This course does not.
 
-1. Complete the [main setup](README.md) (Docker Desktop + Kubernetes + courses one-liner) if you have not already. Kubernetes is only for the UI container, not for Terraform.
-2. Open **http://127.0.0.1:8091/**
-3. Open the **aws-terraform** course and follow lessons from **Environment** onward.
+Start the same courses UI **without a cluster**:
 
-Keep LocalStack running while you **Check** labs. Interactive Check uses AWS CLI against **http://localhost:4566**. From the `mockctl-web` container that is `host.docker.internal:4566`.
+### Windows (PowerShell)
+
+```powershell
+irm https://raw.githubusercontent.com/FedorArbuzov/mockctl-setup/main/windows-courses-ui.ps1 | iex
+```
+
+### macOS / Linux
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/FedorArbuzov/mockctl-setup/main/unix-courses-ui.sh | bash
+```
+
+Then:
+
+1. Open **http://127.0.0.1:8091/**
+2. Open **aws-terraform** and follow lessons from **Environment** onward.
+
+Keep LocalStack running while you **Check**. The UI container talks to LocalStack at `host.docker.internal:4566`.
 
 Work in a folder **outside** the course tree, e.g. `~/aws-labs/lesson-02/`.
 
@@ -168,7 +183,8 @@ docker rm -f mockctl-web
 | `connection refused :4566` | Start Docker Desktop, re-run the one-liner |
 | Port 4566 already in use | Stop the other LocalStack: `docker ps` then `docker compose … down` |
 | `winget` finds no package | Exact id: `Hashicorp.Terraform` (not `HashiCorp.Terraform`). Or download the zip from the HashiCorp install page |
-| Interactive Check: AWS CLI missing | Install AWS CLI v2 on the machine that runs the courses UI |
+| Courses UI asks to enable Kubernetes | You used the **K8s** one-liner from [README.md](README.md). Use `windows-courses-ui.ps1` / `unix-courses-ui.sh` instead |
+| Interactive Check cannot reach LocalStack | LocalStack must be up on the host (`:4566`). Re-run the LocalStack one-liner |
 | Check fails after `destroy` | Check looks at LocalStack. Apply first, Check, then destroy |
 
 ---
@@ -177,9 +193,11 @@ docker rm -f mockctl-web
 
 | File | Purpose |
 |------|---------|
-| [`windows-localstack-up.ps1`](windows-localstack-up.ps1) | Bootstrap (Windows) |
-| [`unix-localstack-up.sh`](unix-localstack-up.sh) | Bootstrap (macOS / Linux) |
+| [`windows-localstack-up.ps1`](windows-localstack-up.ps1) | LocalStack (Windows) |
+| [`unix-localstack-up.sh`](unix-localstack-up.sh) | LocalStack (macOS / Linux) |
+| [`windows-courses-ui.ps1`](windows-courses-ui.ps1) | Courses UI, **no Kubernetes** (Windows) |
+| [`unix-courses-ui.sh`](unix-courses-ui.sh) | Courses UI, **no Kubernetes** (macOS / Linux) |
 | [`localstack/docker-compose.yml`](localstack/docker-compose.yml) | LocalStack 3.8 |
 
-Kubernetes + courses UI: [README.md](README.md)  
+Kubernetes courses (different track): [README.md](README.md)  
 GitLab CI/CD labs: [GITLAB.md](GITLAB.md)
