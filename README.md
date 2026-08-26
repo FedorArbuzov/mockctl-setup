@@ -12,6 +12,13 @@ After that, open the browser and go through lessons and interactive labs (Start 
 
 No cloud account. No subscription. No admin rights. About **5 GB** free disk and internet for the first image pull.
 
+**Other labs (no Kubernetes required for the runtime itself):**
+
+| Course | Guide |
+|--------|--------|
+| AWS + Terraform (LocalStack) | [LOCALSTACK.md](LOCALSTACK.md) |
+| GitLab CI/CD | [GITLAB.md](GITLAB.md) |
+
 ---
 
 ## What happens after the one command
@@ -127,8 +134,10 @@ Kubernetes in Docker Desktop stays enabled.
 
 | File | Purpose |
 |------|---------|
-| [`windows-mockctl-web.ps1`](windows-mockctl-web.ps1) | Windows bootstrap |
-| [`unix-mockctl-web.sh`](unix-mockctl-web.sh) | macOS / Linux bootstrap |
+| [`windows-mockctl-web.ps1`](windows-mockctl-web.ps1) | Windows bootstrap (courses UI) |
+| [`unix-mockctl-web.sh`](unix-mockctl-web.sh) | macOS / Linux bootstrap (courses UI) |
+| [`LOCALSTACK.md`](LOCALSTACK.md) | AWS + Terraform labs (LocalStack one-liner) |
+| [`GITLAB.md`](GITLAB.md) | GitLab CI/CD labs |
 | [`docs/mockctl.md`](docs/mockctl.md) | Optional **CLI** (`mockctl`) notes — minikube-era tool; **not** required for the Docker Desktop path above |
 
 ---
