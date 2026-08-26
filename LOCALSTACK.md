@@ -92,13 +92,13 @@ Interactive **Check** shells out to `aws` (same idea as `kubectl` in Kubernetes 
 
 Official installer: [AWS CLI v2](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html).
 
-**Windows** (PowerShell):
+**Windows** (PowerShell) — current user, no admin. Do **not** use `winget install Amazon.AWSCLI`: that MSI is machine-wide, needs UAC, and often sits on “Downloading…” for minutes.
 
 ```powershell
-winget install --id Amazon.AWSCLI -e
+irm https://awscli.amazonaws.com/v2/install.ps1 | iex
 ```
 
-Open a **new** terminal, then `aws --version`.
+Open a **new** terminal, then `aws --version`. If Interactive Check still says `aws not found`, restart the courses UI / `mockctl web` (the old process keeps the old PATH).
 
 **macOS:**
 
@@ -215,7 +215,7 @@ docker rm -f mockctl-web
 | `connection refused :4566` | Start Docker Desktop, re-run the one-liner |
 | Port 4566 already in use | Stop the other LocalStack: `docker ps` then `docker compose … down` |
 | `winget` finds no package | Terraform: `Hashicorp.Terraform`. AWS CLI: `Amazon.AWSCLI`. Or use the official installers |
-| `aws not found in PATH` on Check | Install AWS CLI v2 on the **same machine** that runs `mockctl web`. Docker UI already has it — this error is from a host `mockctl web` |
+| `aws not found in PATH` on Check | Install AWS CLI v2, then **restart** `mockctl web` / the courses UI. Windows: `irm https://awscli.amazonaws.com/v2/install.ps1 | iex` (not the winget MSI). New terminal is not enough if the UI process is already running |
 | Courses UI asks to enable Kubernetes | You used the **K8s** one-liner from [README.md](README.md). Use `windows-courses-ui.ps1` / `unix-courses-ui.sh` instead |
 | Interactive Check cannot reach LocalStack | LocalStack must be up on the host (`:4566`). Re-run the LocalStack one-liner |
 | Check fails after `destroy` | Check looks at LocalStack. Apply first, Check, then destroy |
