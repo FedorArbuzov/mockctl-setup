@@ -9,6 +9,8 @@ You need **Docker Desktop** (or Docker Engine). One command starts:
 
 No Terraform or AWS CLI install on the host is required to do the labs (use `exec lab bash`). Interactive Check in the courses UI still uses the **UI / host** `aws` if you run Check there.
 
+The first run **builds** the lab image on your machine (a few minutes). It pulls only the public LocalStack image — no GitHub Container Registry login.
+
 ---
 
 ## One command
@@ -33,11 +35,12 @@ curl -fsSL https://raw.githubusercontent.com/FedorArbuzov/mockctl-setup/main/uni
 
 The script:
 
-1. Writes compose to `~/.mock-exams/localstack/` (Windows: `%USERPROFILE%\.mock-exams\localstack\`)
+1. Writes compose + lab Dockerfile to `~/.mock-exams/localstack/` (Windows: `%USERPROFILE%\.mock-exams\localstack\`)
 2. Creates `~/aws-labs`
-3. Pulls **`localstack/localstack:3.8`** and **`ghcr.io/fedorarbuzov/mock-exams/aws-terraform-lab`**
-4. Starts both containers
-5. Waits until **http://localhost:4566/_localstack/health** returns 200
+3. Pulls **`localstack/localstack:3.8`**
+4. Builds **`mock-aws-terraform-lab:local`** (Terraform + AWS CLI)
+5. Starts both containers
+6. Waits until **http://localhost:4566/_localstack/health** returns 200
 
 Expected last lines:
 
@@ -114,7 +117,7 @@ Wipe LocalStack data: add `-v`. `~/aws-labs` is on the host and is not deleted.
 | Symptom | What to do |
 |---------|------------|
 | `irm : 404` | URL must be `.../mockctl-setup/main/windows-localstack-up.ps1` |
-| lab image **denied** / 401 | GHCR package `aws-terraform-lab` must be **Public** |
+| lab image **denied** / 401 | Old script tried to pull a private GHCR image. Re-run the one-liner (it now builds locally). |
 | `License activation failed` | Pin is **3.8**, not `latest`. Delete `~/.mock-exams/localstack/` and re-run |
 | Port 4566 in use | Stop the other LocalStack (`docker ps`, then `compose down`) |
 | Courses UI asks for Kubernetes | You used the **K8s** one-liner. Use `windows-courses-ui.ps1` / `unix-courses-ui.sh` |

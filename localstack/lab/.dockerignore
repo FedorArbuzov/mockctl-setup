@@ -1,0 +1,5 @@
+*
+!Dockerfile
+!entrypoint.sh
+!verify-final.sh
+!lab-help
