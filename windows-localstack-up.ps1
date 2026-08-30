@@ -68,7 +68,7 @@ if (-not $dockerCmd) {
 Write-Host "Checking Docker (up to 20s)..."
 $out = Join-Path $env:TEMP "mock-docker-info.out"
 $err = Join-Path $env:TEMP "mock-docker-info.err"
-$p = Start-Process -FilePath $dockerCmd.Source -ArgumentList "info" -NoNewWindow -PassThru `
+$p = Start-Process -FilePath $dockerCmd.Source -ArgumentList "version","--format","{{.Server.Version}}" -NoNewWindow -PassThru `
     -RedirectStandardOutput $out -RedirectStandardError $err
 if (-not $p.WaitForExit(20000)) {
     try { $p.Kill() } catch { }

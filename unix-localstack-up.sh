@@ -65,11 +65,11 @@ if ! command -v docker >/dev/null 2>&1; then
   exit 1
 fi
 if command -v timeout >/dev/null 2>&1; then
-  if ! timeout 20 docker info >/dev/null 2>&1; then
+  if ! timeout 20 docker version --format '{{.Server.Version}}' >/dev/null 2>&1; then
     echo "Docker is not responding. Start Docker Desktop (or the daemon) and wait until it is running, then retry." >&2
     exit 1
   fi
-elif ! docker info >/dev/null 2>&1; then
+elif ! docker version --format '{{.Server.Version}}' >/dev/null 2>&1; then
   echo "Start Docker Desktop (or the Docker daemon) first." >&2
   exit 1
 fi

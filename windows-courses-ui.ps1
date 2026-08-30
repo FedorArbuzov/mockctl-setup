@@ -15,17 +15,19 @@ $Container = "mockctl-web"
 $Url = "http://127.0.0.1:${Port}/"
 
 Write-Host "Checking Docker..."
-docker info *> $null
+docker version --format "{{.Server.Version}}" | Out-Null
 if ($LASTEXITCODE -ne 0) { throw "Start Docker Desktop first." }
 
+Write-Host "Pulling $Image ..."
 $prev = $ErrorActionPreference
 $ErrorActionPreference = "Continue"
-docker pull $Image *> $null
+docker pull $Image
 $pullOk = ($LASTEXITCODE -eq 0)
 $ErrorActionPreference = $prev
 if (-not $pullOk) {
-    docker image inspect $Image *> $null
+    docker image inspect $Image | Out-Null
     if ($LASTEXITCODE -ne 0) { throw "Image not found: $Image" }
+    Write-Host "Pull failed; using a local copy of $Image"
 }
 
 cmd.exe /c "docker rm -f $Container >nul 2>&1" | Out-Null

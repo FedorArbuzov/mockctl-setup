@@ -12,16 +12,19 @@ PORT="${MOCKCTL_WEB_PORT:-8091}"
 CONTAINER="mockctl-web"
 URL="http://127.0.0.1:${PORT}/"
 
-if ! docker info >/dev/null 2>&1; then
+echo "Checking Docker..."
+if ! docker version --format '{{.Server.Version}}' >/dev/null 2>&1; then
   echo "Start Docker Desktop (or the Docker daemon) first." >&2
   exit 1
 fi
 
-if ! docker pull "$IMAGE" >/dev/null 2>&1; then
+echo "Pulling $IMAGE ..."
+if ! docker pull "$IMAGE"; then
   if ! docker image inspect "$IMAGE" >/dev/null 2>&1; then
     echo "Image not found: $IMAGE" >&2
     exit 1
   fi
+  echo "Pull failed; using the image already on disk."
 fi
 
 docker rm -f "$CONTAINER" >/dev/null 2>&1 || true
