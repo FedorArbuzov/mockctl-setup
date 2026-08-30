@@ -74,9 +74,13 @@ if (-not $p.WaitForExit(20000)) {
     try { $p.Kill() } catch { }
     throw "Docker is not responding. Start Docker Desktop and wait until the whale is steady (Running), then retry."
 }
-if ($p.ExitCode -ne 0) {
+# Start-Process often leaves ExitCode $null even on success; $null -ne 0 is $true in PowerShell.
+$ver = ""
+if (Test-Path -LiteralPath $out) { $ver = (Get-Content -LiteralPath $out -Raw -ErrorAction SilentlyContinue).Trim() }
+if (-not $ver) {
     throw "Start Docker Desktop first (engine is not running)."
 }
+Write-Host "Docker $ver"
 
 Install-ComposeFile
 New-Item -ItemType Directory -Force -Path $Labs | Out-Null
