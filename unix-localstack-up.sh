@@ -59,8 +59,17 @@ install_compose_file() {
   exit 1
 }
 
-echo "Checking Docker..."
-if ! docker info >/dev/null 2>&1; then
+echo "Checking Docker (up to 20s)..."
+if ! command -v docker >/dev/null 2>&1; then
+  echo "Install Docker first (Docker Desktop or the Docker daemon)." >&2
+  exit 1
+fi
+if command -v timeout >/dev/null 2>&1; then
+  if ! timeout 20 docker info >/dev/null 2>&1; then
+    echo "Docker is not responding. Start Docker Desktop (or the daemon) and wait until it is running, then retry." >&2
+    exit 1
+  fi
+elif ! docker info >/dev/null 2>&1; then
   echo "Start Docker Desktop (or the Docker daemon) first." >&2
   exit 1
 fi

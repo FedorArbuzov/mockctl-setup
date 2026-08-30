@@ -61,9 +61,22 @@ function Install-ComposeFile {
     }
 }
 
-Write-Host "Checking Docker..."
-docker info *> $null
-if ($LASTEXITCODE -ne 0) { throw "Start Docker Desktop first." }
+$dockerCmd = Get-Command docker -ErrorAction SilentlyContinue
+if (-not $dockerCmd) {
+    throw "docker is not on PATH. Install Docker Desktop, then open a new PowerShell."
+}
+Write-Host "Checking Docker (up to 20s)..."
+$out = Join-Path $env:TEMP "mock-docker-info.out"
+$err = Join-Path $env:TEMP "mock-docker-info.err"
+$p = Start-Process -FilePath $dockerCmd.Source -ArgumentList "info" -NoNewWindow -PassThru `
+    -RedirectStandardOutput $out -RedirectStandardError $err
+if (-not $p.WaitForExit(20000)) {
+    try { $p.Kill() } catch { }
+    throw "Docker is not responding. Start Docker Desktop and wait until the whale is steady (Running), then retry."
+}
+if ($p.ExitCode -ne 0) {
+    throw "Start Docker Desktop first (engine is not running)."
+}
 
 Install-ComposeFile
 New-Item -ItemType Directory -Force -Path $Labs | Out-Null

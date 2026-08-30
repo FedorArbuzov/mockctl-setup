@@ -97,6 +97,7 @@ Wipe LocalStack data: add `-v`. `~/aws-labs` is on the host and is not deleted.
 | Symptom | What to do |
 |---------|------------|
 | `irm : 404` | URL must be `.../mockctl-setup/main/windows-localstack-up.ps1` |
+| Hangs / times out on **Checking Docker** | Docker Desktop is not running yet. Start it, wait until the whale is steady, then retry |
 | lab or web image **denied** / 401 | Make the GHCR package **Public**: [aws-terraform-lab](https://github.com/FedorArbuzov/mock-exams/pkgs/container/mock-exams%2Faws-terraform-lab), [mockctl-web](https://github.com/FedorArbuzov/mock-exams/pkgs/container/mock-exams%2Fmockctl-web) — Package settings → Danger Zone → Change visibility |
 | `License activation failed` | Pin is **3.8**, not `latest`. Delete `~/.mock-exams/localstack/` and re-run |
 | Port 4566 in use | Stop the other LocalStack (`docker ps`, then `compose down`) |
