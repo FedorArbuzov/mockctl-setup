@@ -108,9 +108,26 @@ if ($LASTEXITCODE -ne 0 -or $labRunning -ne "true") {
 
 Write-Host ""
 Write-Host "OK  LocalStack  $Url"
+Write-Host "    course:     http://127.0.0.1:8091/aws-terraform/README.md"
 Write-Host "    health:     $Url/_localstack/health"
 Write-Host "    workdir:    $Labs"
 Write-Host "    lab:        docker compose -f `"$Compose`" exec lab bash"
 Write-Host "    terraform:  docker compose -f `"$Compose`" exec lab terraform version"
 Write-Host "    stop:       docker compose -f `"$Compose`" down"
 Write-Host "    (LocalStack data volume is kept; add -v to wipe)"
+
+$uiUp = $false
+try {
+    $ui = Invoke-WebRequest -Uri "http://127.0.0.1:8091/" -UseBasicParsing -TimeoutSec 2
+    if ($ui.StatusCode -ge 200 -and $ui.StatusCode -lt 500) { $uiUp = $true }
+} catch {
+    $uiUp = $false
+}
+Write-Host ""
+if ($uiUp) {
+    Write-Host "Open the course:  http://127.0.0.1:8091/aws-terraform/README.md"
+} else {
+    Write-Host "Lessons UI is not running yet. Start it, then open the course URL:"
+    Write-Host "  irm https://raw.githubusercontent.com/FedorArbuzov/mockctl-setup/main/windows-courses-ui.ps1 | iex"
+    Write-Host "  http://127.0.0.1:8091/aws-terraform/README.md"
+}

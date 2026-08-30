@@ -43,9 +43,12 @@ Expected last lines:
 
 ```text
 OK  LocalStack  http://localhost:4566
+    course:     http://127.0.0.1:8091/aws-terraform/README.md
     workdir:    .../aws-labs
     lab:        docker compose -f ... exec lab bash
 ```
+
+This one-liner is **LocalStack + Terraform toolbox**, not the lessons page. Open the course at **http://127.0.0.1:8091/aws-terraform/README.md** after the UI below is up.
 
 Enter the toolbox:
 

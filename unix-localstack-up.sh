@@ -107,9 +107,19 @@ fi
 
 echo
 echo "OK  LocalStack  $URL"
+echo "    course:     http://127.0.0.1:8091/aws-terraform/README.md"
 echo "    health:     $URL/_localstack/health"
 echo "    workdir:    $LABS"
 echo "    lab:        docker compose -f $COMPOSE exec lab bash"
 echo "    terraform:  docker compose -f $COMPOSE exec lab terraform version"
 echo "    stop:       docker compose -f $COMPOSE down"
 echo "    (LocalStack data volume is kept; add -v to wipe)"
+if curl -sf --connect-timeout 2 "http://127.0.0.1:8091/" >/dev/null 2>&1; then
+  echo
+  echo "Open the course:  http://127.0.0.1:8091/aws-terraform/README.md"
+else
+  echo
+  echo "Lessons UI is not running yet. Start it, then open the course URL:"
+  echo "  curl -fsSL https://raw.githubusercontent.com/FedorArbuzov/mockctl-setup/main/unix-courses-ui.sh | bash"
+  echo "  http://127.0.0.1:8091/aws-terraform/README.md"
+fi
