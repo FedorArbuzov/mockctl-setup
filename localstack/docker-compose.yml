@@ -1,8 +1,7 @@
 # LocalStack + lab toolbox (Terraform, AWS CLI, verify-final).
 # Course: courses-en/aws-terraform
 #
-#   docker compose -f deploy/aws-terraform/docker-compose.yml pull localstack
-#   docker compose -f deploy/aws-terraform/docker-compose.yml build lab
+#   docker compose -f deploy/aws-terraform/docker-compose.yml pull
 #   docker compose -f deploy/aws-terraform/docker-compose.yml up -d
 #   docker compose -f deploy/aws-terraform/docker-compose.yml exec lab bash
 #
@@ -37,8 +36,7 @@ services:
       - backend
 
   lab:
-    image: ${AWS_TERRAFORM_LAB_IMAGE:-mock-aws-terraform-lab:local}
-    build: ./lab
+    image: ${AWS_TERRAFORM_LAB_IMAGE:-ghcr.io/fedorarbuzov/mock-exams/aws-terraform-lab:latest}
     container_name: mock-aws-terraform-lab
     hostname: lab
     working_dir: /aws-labs
