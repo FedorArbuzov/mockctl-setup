@@ -2,11 +2,16 @@
 
 How to run the **aws-terraform** course without Kubernetes, minikube, or a real AWS account.
 
-You need **Docker Desktop** (or Docker Engine). LocalStack is an AWS emulator on **http://localhost:4566**. Terraform runs **on your laptop**.
+You need **Docker Desktop** (or Docker Engine). One command starts:
+
+- **LocalStack** on **http://localhost:4566**
+- **`lab`** — Terraform + AWS CLI, files in **`~/aws-labs`**
+
+No Terraform or AWS CLI install on the host is required to do the labs (use `exec lab bash`). Interactive Check in the courses UI still uses the **UI / host** `aws` if you run Check there.
 
 ---
 
-## One command (LocalStack)
+## One command
 
 ### Windows (PowerShell)
 
@@ -28,120 +33,41 @@ curl -fsSL https://raw.githubusercontent.com/FedorArbuzov/mockctl-setup/main/uni
 
 The script:
 
-1. Downloads [`localstack/docker-compose.yml`](localstack/docker-compose.yml) to `~/.mock-exams/localstack/` (Windows: `%USERPROFILE%\.mock-exams\localstack\`)
-2. Starts LocalStack (`docker compose up -d`) — image **`localstack/localstack:3.8`** (community; `latest` may demand an auth token)
-3. Waits until **http://localhost:4566/_localstack/health** returns 200
+1. Writes compose to `~/.mock-exams/localstack/` (Windows: `%USERPROFILE%\.mock-exams\localstack\`)
+2. Creates `~/aws-labs`
+3. Pulls **`localstack/localstack:3.8`** and **`ghcr.io/fedorarbuzov/mock-exams/aws-terraform-lab`**
+4. Starts both containers
+5. Waits until **http://localhost:4566/_localstack/health** returns 200
 
 Expected last lines:
 
 ```text
 OK  LocalStack  http://localhost:4566
-    health:     http://localhost:4566/_localstack/health
+    workdir:    .../aws-labs
+    lab:        docker compose -f ... exec lab bash
 ```
 
-Sanity check:
+Enter the toolbox:
 
 ```bash
-curl -s http://localhost:4566/_localstack/health
+docker compose -f ~/.mock-exams/localstack/docker-compose.yml exec lab bash
 ```
 
 PowerShell:
 
 ```powershell
-Invoke-WebRequest http://localhost:4566/_localstack/health -UseBasicParsing
+docker compose -f "$env:USERPROFILE\.mock-exams\localstack\docker-compose.yml" exec lab bash
 ```
 
-You should see JSON with `"s3"` / `"lambda"` / `"dynamodb"` available.
+Inside `lab`, `localhost:4566` is LocalStack (same URLs as in the course). You are in `/aws-labs`.
 
 **Port 4566** — only one LocalStack at a time.
 
 ---
 
-## Install Terraform
-
-The CLI is **not** inside the LocalStack container. Need **1.5 or newer**.
-
-Official instructions (zip for every OS, Linux apt/yum): [developer.hashicorp.com/terraform/install](https://developer.hashicorp.com/terraform/install).
-
-**Windows** (PowerShell) — id is `Hashicorp.Terraform` (lowercase `c`; `-e` is case-sensitive):
-
-```powershell
-winget install --id Hashicorp.Terraform -e
-```
-
-Open a **new** terminal, then `terraform version`.
-
-**macOS:**
-
-```bash
-brew tap hashicorp/tap
-brew install hashicorp/tap/terraform
-terraform version
-```
-
-**Linux:** follow the HashiCorp install page, or unpack a zip into `/usr/local/bin`.
-
----
-
-## Install AWS CLI v2
-
-Interactive **Check** shells out to `aws` (same idea as `kubectl` in Kubernetes labs). It talks to LocalStack, not a real AWS account.
-
-- **Docker courses UI** (`windows-courses-ui.ps1` / `unix-courses-ui.sh`): CLI is already in the container. Host install is still useful for `aws s3 ls` and the finale script.
-- **`mockctl web` on the laptop:** `aws` **must** be on your PATH, or Check fails with `aws not found`.
-
-Official installer: [AWS CLI v2](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html).
-
-**Windows** (PowerShell) — current user, no admin. Do **not** use `winget install Amazon.AWSCLI`: that MSI is machine-wide, needs UAC, and often sits on “Downloading…” for minutes.
-
-```powershell
-irm https://awscli.amazonaws.com/v2/install.ps1 | iex
-```
-
-Open a **new** terminal, then `aws --version`. If Interactive Check still says `aws not found`, restart the courses UI / `mockctl web` (the old process keeps the old PATH).
-
-**macOS:**
-
-```bash
-brew install awscli
-aws --version
-```
-
-**Linux:** follow the AWS install page (zip or distro package).
-
----
-
-## Fake AWS credentials (for this course)
-
-LocalStack accepts any keys. In the same terminal you use for `terraform` / `aws`:
-
-```bash
-export AWS_ACCESS_KEY_ID=test
-export AWS_SECRET_ACCESS_KEY=test
-export AWS_DEFAULT_REGION=us-east-1
-```
-
-PowerShell:
-
-```powershell
-$env:AWS_ACCESS_KEY_ID = "test"
-$env:AWS_SECRET_ACCESS_KEY = "test"
-$env:AWS_DEFAULT_REGION = "us-east-1"
-```
-
-Smoke test (host CLI):
-
-```bash
-aws --endpoint-url=http://localhost:4566 s3 ls
-```
-
----
-
 ## Courses UI (lessons + Interactive Check)
 
-Skip the [main README](README.md) one-liner — that path needs Kubernetes. This course does not.
-
-Start the same courses UI **without a cluster**:
+Skip the [main README](README.md) one-liner — that path needs Kubernetes.
 
 ### Windows (PowerShell)
 
@@ -155,32 +81,19 @@ irm https://raw.githubusercontent.com/FedorArbuzov/mockctl-setup/main/windows-co
 curl -fsSL https://raw.githubusercontent.com/FedorArbuzov/mockctl-setup/main/unix-courses-ui.sh | bash
 ```
 
-Then:
-
-1. Open **http://127.0.0.1:8091/**
-2. Open **aws-terraform** and follow lessons from **Environment** onward.
-
-Keep LocalStack running while you **Check**. The UI container talks to LocalStack at `host.docker.internal:4566`.
-
-Work in a folder **outside** the course tree, e.g. `~/aws-labs/lesson-02/`.
+Then **http://127.0.0.1:8091/** → **aws-terraform**. Keep the LocalStack+lab stack up while you **Check**.
 
 ---
 
-## Typical lab flow
+## Optional: tools on the host
 
-1. LocalStack healthy on `:4566`.
-2. Write `.tf` files (hello world is one S3 bucket).
-3. `terraform init` → `plan` → `apply` against LocalStack (`endpoints` / `skip_*` as in the first lab).
-4. In the UI, **Check** (do not `destroy` before Check).
-5. Later labs: IAM, S3 hardening, Lambda, DynamoDB, then the S3 → Lambda pipeline.
+If you prefer `terraform` / `aws` on the laptop instead of `lab`: [Install Terraform](https://developer.hashicorp.com/terraform/install), [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html). Fake keys: `test` / `test` / `us-east-1`.
 
-No paid AWS account. Do not omit `endpoints` or you may hit real AWS.
+Interactive Check needs `aws` where the UI runs (host `mockctl web`, or already inside the Docker courses UI).
 
 ---
 
 ## Stop / reset
-
-**Stop LocalStack (keep data volume):**
 
 ```bash
 docker compose -f "$HOME/.mock-exams/localstack/docker-compose.yml" down
@@ -192,17 +105,7 @@ Windows:
 docker compose -f "$env:USERPROFILE\.mock-exams\localstack\docker-compose.yml" down
 ```
 
-**Wipe LocalStack data:**
-
-```bash
-docker compose -f "$HOME/.mock-exams/localstack/docker-compose.yml" down -v
-```
-
-**Courses UI** (separate):
-
-```bash
-docker rm -f mockctl-web
-```
+Wipe LocalStack data: add `-v`. `~/aws-labs` is on the host and is not deleted.
 
 ---
 
@@ -210,27 +113,10 @@ docker rm -f mockctl-web
 
 | Symptom | What to do |
 |---------|------------|
-| `irm : 404` | Confirm you are on `main` and the URL is `.../mockctl-setup/main/windows-localstack-up.ps1` |
-| `License activation failed` / `LOCALSTACK_AUTH_TOKEN` | You pulled `localstack/localstack:latest`. This stack pins **3.8**. Delete the compose file under `.mock-exams/localstack/` and re-run the one-liner |
-| `connection refused :4566` | Start Docker Desktop, re-run the one-liner |
-| Port 4566 already in use | Stop the other LocalStack: `docker ps` then `docker compose … down` |
-| `winget` finds no package | Terraform: `Hashicorp.Terraform`. AWS CLI: `Amazon.AWSCLI`. Or use the official installers |
-| `aws not found in PATH` on Check | Install AWS CLI v2, then **restart** `mockctl web` / the courses UI. Windows: `irm https://awscli.amazonaws.com/v2/install.ps1 | iex` (not the winget MSI). New terminal is not enough if the UI process is already running |
-| Courses UI asks to enable Kubernetes | You used the **K8s** one-liner from [README.md](README.md). Use `windows-courses-ui.ps1` / `unix-courses-ui.sh` instead |
-| Interactive Check cannot reach LocalStack | LocalStack must be up on the host (`:4566`). Re-run the LocalStack one-liner |
-| Check fails after `destroy` | Check looks at LocalStack. Apply first, Check, then destroy |
+| `irm : 404` | URL must be `.../mockctl-setup/main/windows-localstack-up.ps1` |
+| lab image **denied** / 401 | GHCR package `aws-terraform-lab` must be **Public** |
+| `License activation failed` | Pin is **3.8**, not `latest`. Delete `~/.mock-exams/localstack/` and re-run |
+| Port 4566 in use | Stop the other LocalStack (`docker ps`, then `compose down`) |
+| Courses UI asks for Kubernetes | You used the **K8s** one-liner. Use `windows-courses-ui.ps1` / `unix-courses-ui.sh` |
 
----
-
-## Files in this repo
-
-| File | Purpose |
-|------|---------|
-| [`windows-localstack-up.ps1`](windows-localstack-up.ps1) | LocalStack (Windows) |
-| [`unix-localstack-up.sh`](unix-localstack-up.sh) | LocalStack (macOS / Linux) |
-| [`windows-courses-ui.ps1`](windows-courses-ui.ps1) | Courses UI, **no Kubernetes** (Windows) |
-| [`unix-courses-ui.sh`](unix-courses-ui.sh) | Courses UI, **no Kubernetes** (macOS / Linux) |
-| [`localstack/docker-compose.yml`](localstack/docker-compose.yml) | LocalStack 3.8 |
-
-Kubernetes courses (different track): [README.md](README.md)  
-GitLab CI/CD labs: [GITLAB.md](GITLAB.md)
+Course details: [aws-terraform ENVIRONMENT](https://github.com/FedorArbuzov/mock-exams/blob/master/courses-en/aws-terraform/ENVIRONMENT.md) (after that file is on `master`).

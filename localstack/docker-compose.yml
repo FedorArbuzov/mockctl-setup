@@ -1,24 +1,66 @@
+# LocalStack + lab toolbox (Terraform, AWS CLI, verify-final).
+# Course: courses-en/aws-terraform
+#
+#   docker compose -f deploy/aws-terraform/docker-compose.yml pull
+#   docker compose -f deploy/aws-terraform/docker-compose.yml up -d
+#   docker compose -f deploy/aws-terraform/docker-compose.yml exec lab bash
+#
+# Port 4566 — only one LocalStack at a time. Stop ~/.mock-exams/localstack first if it is up.
+
+name: mock-aws-terraform
+
 services:
   localstack:
-    # Pin 3.8: localstack/localstack:latest (2026.3+) requires LOCALSTACK_AUTH_TOKEN.
     image: localstack/localstack:3.8
+    container_name: mock-aws-terraform-localstack
     ports:
       - "4566:4566"
       - "4510-4559:4510-4559"
     environment:
-      - SERVICES=s3,lambda,dynamodb,iam,sqs,sns,sts,logs,apigateway,events,secretsmanager,kms,ec2,elbv2,rds,ecs,cloudwatch
-      - DEBUG=0
-      - LAMBDA_EXECUTOR=docker
-      - DOCKER_HOST=unix:///var/run/docker.sock
+      SERVICES: s3,lambda,dynamodb,iam,sqs,sns,sts,logs,apigateway,events,secretsmanager,kms,ec2,elbv2,rds,ecs,cloudwatch
+      DEBUG: "0"
+      AWS_DEFAULT_REGION: us-east-1
+      LAMBDA_EXECUTOR: docker
+      DOCKER_HOST: unix:///var/run/docker.sock
+      LAMBDA_DOCKER_NETWORK: mock-aws-terraform_backend
     volumes:
-      - "/var/run/docker.sock:/var/run/docker.sock"
-      - "localstack-data:/var/lib/localstack"
+      - /var/run/docker.sock:/var/run/docker.sock
+      - localstack-data:/var/lib/localstack
     healthcheck:
       test: ["CMD", "curl", "-sf", "http://localhost:4566/_localstack/health"]
       interval: 5s
       timeout: 5s
       retries: 20
       start_period: 20s
+    networks:
+      - backend
+
+  lab:
+    image: ${AWS_TERRAFORM_LAB_IMAGE:-ghcr.io/fedorarbuzov/mock-exams/aws-terraform-lab:latest}
+    container_name: mock-aws-terraform-lab
+    hostname: lab
+    working_dir: /aws-labs
+    environment:
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+      AWS_DEFAULT_REGION: us-east-1
+      AWS_ENDPOINT_URL: http://localhost:4566
+      AWS_EC2_METADATA_DISABLED: "true"
+    volumes:
+      - ~/aws-labs:/aws-labs
+    depends_on:
+      localstack:
+        condition: service_healthy
+    stdin_open: true
+    tty: true
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - backend
+
+networks:
+  backend:
+    name: mock-aws-terraform_backend
 
 volumes:
   localstack-data:

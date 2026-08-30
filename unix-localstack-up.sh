@@ -1,17 +1,24 @@
 #!/usr/bin/env bash
-# LocalStack in one shot (Docker Desktop / Docker Engine). No Kubernetes.
+# LocalStack + aws-terraform lab (Terraform, AWS CLI) in one shot. No Kubernetes.
 #
+# From this repo:
+#   bash scripts/unix-localstack-up.sh
+#
+# Public:
 #   curl -fsSL https://raw.githubusercontent.com/FedorArbuzov/mockctl-setup/main/unix-localstack-up.sh | bash
 #
-# Endpoint: http://localhost:4566
+# LocalStack: http://localhost:4566
+# Lab:        docker compose -f ~/.mock-exams/localstack/docker-compose.yml exec lab bash
+# Workdir:    ~/aws-labs
 
 set -euo pipefail
 
-REPO_RAW="https://raw.githubusercontent.com/FedorArbuzov/mockctl-setup/main"
+REPO_RAW="${MOCKCTL_SETUP_RAW:-https://raw.githubusercontent.com/FedorArbuzov/mockctl-setup/main}"
+EXAMS_RAW="${MOCK_EXAMS_RAW:-https://raw.githubusercontent.com/FedorArbuzov/mock-exams/master}"
 DIR="${HOME}/.mock-exams/localstack"
 COMPOSE="${DIR}/docker-compose.yml"
-CONTAINER="localstack-localstack-1"
 URL="http://localhost:4566"
+LABS="${HOME}/aws-labs"
 
 script_dir=""
 if [[ -n "${BASH_SOURCE[0]:-}" ]]; then
@@ -21,8 +28,8 @@ fi
 resolve_local_compose() {
   local c
   for c in \
-    "${script_dir}/localstack/docker-compose.yml" \
-    "${script_dir}/../deploy/localstack/docker-compose.yml"
+    "${script_dir}/../deploy/aws-terraform/docker-compose.yml" \
+    "${script_dir}/localstack/docker-compose.yml"
   do
     if [[ -n "$script_dir" && -f "$c" ]]; then
       (cd "$(dirname "$c")" && pwd)/$(basename "$c")
@@ -41,7 +48,14 @@ install_compose_file() {
     return 0
   fi
   echo "Fetching compose -> $COMPOSE"
-  curl -fsSL "$REPO_RAW/localstack/docker-compose.yml" -o "$COMPOSE"
+  if curl -fsSL "$EXAMS_RAW/deploy/aws-terraform/docker-compose.yml" -o "$COMPOSE"; then
+    return 0
+  fi
+  if curl -fsSL "$REPO_RAW/localstack/docker-compose.yml" -o "$COMPOSE"; then
+    return 0
+  fi
+  echo "Could not get docker-compose.yml. Run from the mock-exams repo: bash scripts/unix-localstack-up.sh" >&2
+  exit 1
 }
 
 echo "Checking Docker..."
@@ -51,25 +65,24 @@ if ! docker info >/dev/null 2>&1; then
 fi
 
 install_compose_file
+mkdir -p "$LABS"
 
-# Replace a leftover container with the same name (e.g. a previous docker run).
-docker rm -f "$CONTAINER" >/dev/null 2>&1 || true
+# Leftover LocalStack-only one-liner used a different container name.
+docker rm -f localstack-localstack-1 mock-aws-terraform-localstack mock-aws-terraform-lab >/dev/null 2>&1 || true
 
-echo "Starting LocalStack..."
+echo "Pulling images (LocalStack + lab)..."
+if ! docker compose -f "$COMPOSE" pull; then
+  echo "Image pull failed. If aws-terraform-lab is 401/denied, make the GHCR package Public." >&2
+  exit 1
+fi
+
+echo "Starting LocalStack + lab..."
 docker compose -f "$COMPOSE" up -d
 
 echo "Waiting for LocalStack health on $URL ..."
 deadline=$((SECONDS + 300))
 ready=0
 while (( SECONDS < deadline )); do
-  if docker inspect "$CONTAINER" >/dev/null 2>&1; then
-    running="$(docker inspect -f '{{.State.Running}}' "$CONTAINER")"
-    if [[ "$running" != "true" ]]; then
-      echo "LocalStack exited. If logs mention a license / AUTH_TOKEN, the image is too new — this stack pins localstack/localstack:3.8." >&2
-      docker compose -f "$COMPOSE" logs --tail 40 >&2 || true
-      exit 1
-    fi
-  fi
   code=$(curl -sS -o /dev/null -w "%{http_code}" --connect-timeout 3 \
     "$URL/_localstack/health" 2>/dev/null || echo "000")
   if [[ "$code" == "200" ]]; then
@@ -82,11 +95,21 @@ done
 
 if [[ "$ready" -ne 1 ]]; then
   echo "LocalStack not healthy after 5 min. Check: docker compose -f $COMPOSE logs" >&2
+  docker compose -f "$COMPOSE" logs --tail 40 >&2 || true
+  exit 1
+fi
+
+if ! docker inspect -f '{{.State.Running}}' mock-aws-terraform-lab 2>/dev/null | grep -qx true; then
+  echo "Lab container is not running. Check: docker compose -f $COMPOSE logs lab" >&2
+  docker compose -f "$COMPOSE" logs --tail 40 lab >&2 || true
   exit 1
 fi
 
 echo
 echo "OK  LocalStack  $URL"
 echo "    health:     $URL/_localstack/health"
+echo "    workdir:    $LABS"
+echo "    lab:        docker compose -f $COMPOSE exec lab bash"
+echo "    terraform:  docker compose -f $COMPOSE exec lab terraform version"
 echo "    stop:       docker compose -f $COMPOSE down"
-echo "    (data volume is kept; add -v to wipe)"
+echo "    (LocalStack data volume is kept; add -v to wipe)"

@@ -1,22 +1,29 @@
-# LocalStack in one shot (Docker Desktop / Docker Engine). No Kubernetes.
+# LocalStack + aws-terraform lab (Terraform, AWS CLI) in one shot. No Kubernetes.
 #
+# From this repo:
+#   .\scripts\windows-localstack-up.ps1
+#
+# Public:
 #   irm https://raw.githubusercontent.com/FedorArbuzov/mockctl-setup/main/windows-localstack-up.ps1 | iex
 #
-# Endpoint: http://localhost:4566
+# LocalStack: http://localhost:4566
+# Lab:        docker compose -f $env:USERPROFILE\.mock-exams\localstack\docker-compose.yml exec lab bash
+# Workdir:    ~\aws-labs
 
 $ErrorActionPreference = "Stop"
 
-$RepoRaw = "https://raw.githubusercontent.com/FedorArbuzov/mockctl-setup/main"
+$RepoRaw = if ($env:MOCKCTL_SETUP_RAW) { $env:MOCKCTL_SETUP_RAW } else { "https://raw.githubusercontent.com/FedorArbuzov/mockctl-setup/main" }
+$ExamsRaw = if ($env:MOCK_EXAMS_RAW) { $env:MOCK_EXAMS_RAW } else { "https://raw.githubusercontent.com/FedorArbuzov/mock-exams/master" }
 $Dir = Join-Path (Join-Path $env:USERPROFILE ".mock-exams") "localstack"
 $Compose = Join-Path $Dir "docker-compose.yml"
-$Container = "localstack-localstack-1"
 $Url = "http://localhost:4566"
+$Labs = Join-Path $env:USERPROFILE "aws-labs"
 
 function Resolve-LocalCompose {
     if (-not $PSScriptRoot) { return $null }
     $candidates = @(
-        (Join-Path $PSScriptRoot "localstack\docker-compose.yml"),
-        (Join-Path $PSScriptRoot "..\deploy\localstack\docker-compose.yml")
+        (Join-Path $PSScriptRoot "..\deploy\aws-terraform\docker-compose.yml"),
+        (Join-Path $PSScriptRoot "localstack\docker-compose.yml")
     )
     foreach ($c in $candidates) {
         $full = [IO.Path]::GetFullPath($c)
@@ -34,13 +41,23 @@ function Install-ComposeFile {
         return
     }
     Write-Host "Fetching compose -> $Compose"
-    Invoke-WebRequest -Uri "$RepoRaw/localstack/docker-compose.yml" -OutFile $Compose -UseBasicParsing
-}
-
-function Get-ContainerState {
-    $id = docker inspect -f "{{.State.Running}} {{.State.ExitCode}}" $Container 2>$null
-    if ($LASTEXITCODE -ne 0) { return $null }
-    return $id.Trim()
+    $urls = @(
+        "$ExamsRaw/deploy/aws-terraform/docker-compose.yml",
+        "$RepoRaw/localstack/docker-compose.yml"
+    )
+    $ok = $false
+    foreach ($u in $urls) {
+        try {
+            Invoke-WebRequest -Uri $u -OutFile $Compose -UseBasicParsing
+            $ok = $true
+            break
+        } catch {
+            # try next
+        }
+    }
+    if (-not $ok) {
+        throw "Could not get docker-compose.yml. Run from the mock-exams repo: .\scripts\windows-localstack-up.ps1"
+    }
 }
 
 Write-Host "Checking Docker..."
@@ -48,11 +65,17 @@ docker info *> $null
 if ($LASTEXITCODE -ne 0) { throw "Start Docker Desktop first." }
 
 Install-ComposeFile
+New-Item -ItemType Directory -Force -Path $Labs | Out-Null
 
-# Replace a leftover container with the same name (e.g. a previous docker run).
-cmd.exe /c "docker rm -f $Container >nul 2>&1" | Out-Null
+cmd.exe /c "docker rm -f localstack-localstack-1 mock-aws-terraform-localstack mock-aws-terraform-lab >nul 2>&1" | Out-Null
 
-Write-Host "Starting LocalStack..."
+Write-Host "Pulling images (LocalStack + lab)..."
+docker compose -f $Compose pull
+if ($LASTEXITCODE -ne 0) {
+    throw "Image pull failed. If aws-terraform-lab is 401/denied, make the GHCR package Public."
+}
+
+Write-Host "Starting LocalStack + lab..."
 docker compose -f $Compose up -d
 if ($LASTEXITCODE -ne 0) { throw "docker compose up failed" }
 
@@ -60,11 +83,6 @@ Write-Host "Waiting for LocalStack health on $Url ..."
 $deadline = (Get-Date).AddMinutes(5)
 $ready = $false
 while ((Get-Date) -lt $deadline) {
-    $state = Get-ContainerState
-    if ($state -and $state -notmatch "^true ") {
-        $logs = docker compose -f $Compose logs --tail 40 2>$null | Out-String
-        throw "LocalStack exited ($state). If logs mention a license / AUTH_TOKEN, pin localstack/localstack:3.8 (latest needs a token).`n$logs"
-    }
     try {
         $r = Invoke-WebRequest -Uri "$Url/_localstack/health" -UseBasicParsing -TimeoutSec 3
         if ($r.StatusCode -eq 200) {
@@ -78,11 +96,21 @@ while ((Get-Date) -lt $deadline) {
     Start-Sleep -Seconds 3
 }
 if (-not $ready) {
-    throw "LocalStack not healthy after 5 min. Check: docker compose -f `"$Compose`" logs"
+    $logs = docker compose -f $Compose logs --tail 40 2>$null | Out-String
+    throw "LocalStack not healthy after 5 min.`n$logs"
+}
+
+$labRunning = docker inspect -f "{{.State.Running}}" mock-aws-terraform-lab 2>$null
+if ($LASTEXITCODE -ne 0 -or $labRunning -ne "true") {
+    $logs = docker compose -f $Compose logs --tail 40 lab 2>$null | Out-String
+    throw "Lab container is not running.`n$logs"
 }
 
 Write-Host ""
 Write-Host "OK  LocalStack  $Url"
 Write-Host "    health:     $Url/_localstack/health"
+Write-Host "    workdir:    $Labs"
+Write-Host "    lab:        docker compose -f `"$Compose`" exec lab bash"
+Write-Host "    terraform:  docker compose -f `"$Compose`" exec lab terraform version"
 Write-Host "    stop:       docker compose -f `"$Compose`" down"
-Write-Host "    (data volume is kept; add -v to wipe)"
+Write-Host "    (LocalStack data volume is kept; add -v to wipe)"
