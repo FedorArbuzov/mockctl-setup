@@ -1,11 +1,13 @@
-# LocalStack + lab toolbox (Terraform, AWS CLI, verify-final).
+# LocalStack + lab toolbox (Terraform, AWS CLI) + courses UI.
 # Course: courses-en/aws-terraform
 #
 #   docker compose -f deploy/aws-terraform/docker-compose.yml pull
 #   docker compose -f deploy/aws-terraform/docker-compose.yml up -d
+#   open http://127.0.0.1:8091/aws-terraform/README.md
 #   docker compose -f deploy/aws-terraform/docker-compose.yml exec lab bash
 #
 # Port 4566 — only one LocalStack at a time. Stop ~/.mock-exams/localstack first if it is up.
+# Port 8091 — stop a leftover mockctl-web container if the UI port is busy.
 
 name: mock-aws-terraform
 
@@ -55,6 +57,32 @@ services:
     tty: true
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    networks:
+      - backend
+
+  web:
+    image: ${MOCKCTL_WEB_IMAGE:-ghcr.io/fedorarbuzov/mock-exams/mockctl-web:latest}
+    container_name: mock-aws-terraform-web
+    ports:
+      - "8091:8091"
+    environment:
+      MOCKCTL_AWS_ENDPOINT: http://localstack:4566
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+      AWS_DEFAULT_REGION: us-east-1
+      AWS_EC2_METADATA_DISABLED: "true"
+    depends_on:
+      localstack:
+        condition: service_healthy
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://127.0.0.1:8091/"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
     networks:
       - backend
 

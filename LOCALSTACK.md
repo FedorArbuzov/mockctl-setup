@@ -6,8 +6,9 @@ You need **Docker Desktop** (or Docker Engine). One command starts:
 
 - **LocalStack** on **http://localhost:4566**
 - **`lab`** — Terraform + AWS CLI, files in **`~/aws-labs`**
+- **courses UI** on **http://127.0.0.1:8091/aws-terraform/README.md**
 
-No Terraform or AWS CLI install on the host is required to do the labs (use `exec lab bash`). Interactive Check in the courses UI still uses the **UI / host** `aws` if you run Check there.
+Interactive Check uses AWS CLI **inside the UI container** against LocalStack (`http://localstack:4566`). No Terraform or AWS CLI on the host is required (`exec lab bash`).
 
 ---
 
@@ -35,22 +36,20 @@ The script:
 
 1. Writes compose to `~/.mock-exams/localstack/` (Windows: `%USERPROFILE%\.mock-exams\localstack\`)
 2. Creates `~/aws-labs`
-3. Pulls **`localstack/localstack:3.8`** and **`ghcr.io/fedorarbuzov/mock-exams/aws-terraform-lab`**
-4. Starts both containers
-5. Waits until **http://localhost:4566/_localstack/health** returns 200
+3. Pulls LocalStack, `aws-terraform-lab`, and `mockctl-web`
+4. Starts all three containers
+5. Waits until LocalStack health and the courses UI respond
 
 Expected last lines:
 
 ```text
-OK  LocalStack  http://localhost:4566
-    course:     http://127.0.0.1:8091/aws-terraform/README.md
+OK  course:     http://127.0.0.1:8091/aws-terraform/README.md
+    LocalStack  http://localhost:4566
     workdir:    .../aws-labs
     lab:        docker compose -f ... exec lab bash
 ```
 
-This one-liner is **LocalStack + Terraform toolbox**, not the lessons page. Open the course at **http://127.0.0.1:8091/aws-terraform/README.md** after the UI below is up.
-
-Enter the toolbox:
+Open the course URL. Terraform in the toolbox:
 
 ```bash
 docker compose -f ~/.mock-exams/localstack/docker-compose.yml exec lab bash
@@ -64,35 +63,16 @@ docker compose -f "$env:USERPROFILE\.mock-exams\localstack\docker-compose.yml" e
 
 Inside `lab`, `localhost:4566` is LocalStack (same URLs as in the course). You are in `/aws-labs`.
 
-**Port 4566** — only one LocalStack at a time.
+**Port 4566** — only one LocalStack at a time.  
+**Port 8091** — the script removes a leftover `mockctl-web` if it is occupying the UI port.
 
----
-
-## Courses UI (lessons + Interactive Check)
-
-Skip the [main README](README.md) one-liner — that path needs Kubernetes.
-
-### Windows (PowerShell)
-
-```powershell
-irm https://raw.githubusercontent.com/FedorArbuzov/mockctl-setup/main/windows-courses-ui.ps1 | iex
-```
-
-### macOS / Linux
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/FedorArbuzov/mockctl-setup/main/unix-courses-ui.sh | bash
-```
-
-Then **http://127.0.0.1:8091/** → **aws-terraform**. Keep the LocalStack+lab stack up while you **Check**.
+Do **not** use the [main README](README.md) one-liner — that path needs Kubernetes.
 
 ---
 
 ## Optional: tools on the host
 
 If you prefer `terraform` / `aws` on the laptop instead of `lab`: [Install Terraform](https://developer.hashicorp.com/terraform/install), [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html). Fake keys: `test` / `test` / `us-east-1`.
-
-Interactive Check needs `aws` where the UI runs (host `mockctl web`, or already inside the Docker courses UI).
 
 ---
 
@@ -117,9 +97,10 @@ Wipe LocalStack data: add `-v`. `~/aws-labs` is on the host and is not deleted.
 | Symptom | What to do |
 |---------|------------|
 | `irm : 404` | URL must be `.../mockctl-setup/main/windows-localstack-up.ps1` |
-| lab image **denied** / 401 | Make [aws-terraform-lab](https://github.com/FedorArbuzov/mock-exams/pkgs/container/mock-exams%2Faws-terraform-lab) **Public**: Package settings → Danger Zone → Change visibility |
+| lab or web image **denied** / 401 | Make the GHCR package **Public**: [aws-terraform-lab](https://github.com/FedorArbuzov/mock-exams/pkgs/container/mock-exams%2Faws-terraform-lab), [mockctl-web](https://github.com/FedorArbuzov/mock-exams/pkgs/container/mock-exams%2Fmockctl-web) — Package settings → Danger Zone → Change visibility |
 | `License activation failed` | Pin is **3.8**, not `latest`. Delete `~/.mock-exams/localstack/` and re-run |
 | Port 4566 in use | Stop the other LocalStack (`docker ps`, then `compose down`) |
-| Courses UI asks for Kubernetes | You used the **K8s** one-liner. Use `windows-courses-ui.ps1` / `unix-courses-ui.sh` |
+| Port 8091 in use | Re-run the one-liner (it removes leftover `mockctl-web`) |
+| Courses UI asks for Kubernetes | You used the **K8s** one-liner. Use this LocalStack script instead |
 
 Course details: [aws-terraform ENVIRONMENT](https://github.com/FedorArbuzov/mock-exams/blob/master/courses-en/aws-terraform/ENVIRONMENT.md) (after that file is on `master`).

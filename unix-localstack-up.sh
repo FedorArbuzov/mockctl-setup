@@ -8,6 +8,7 @@
 #   curl -fsSL https://raw.githubusercontent.com/FedorArbuzov/mockctl-setup/main/unix-localstack-up.sh | bash
 #
 # LocalStack: http://localhost:4566
+# Course:     http://127.0.0.1:8091/aws-terraform/README.md
 # Lab:        docker compose -f ~/.mock-exams/localstack/docker-compose.yml exec lab bash
 # Workdir:    ~/aws-labs
 
@@ -48,10 +49,10 @@ install_compose_file() {
     return 0
   fi
   echo "Fetching compose -> $COMPOSE"
-  if curl -fsSL "$EXAMS_RAW/deploy/aws-terraform/docker-compose.yml" -o "$COMPOSE"; then
+  if curl -fsSL "$REPO_RAW/localstack/docker-compose.yml" -o "$COMPOSE"; then
     return 0
   fi
-  if curl -fsSL "$REPO_RAW/localstack/docker-compose.yml" -o "$COMPOSE"; then
+  if curl -fsSL "$EXAMS_RAW/deploy/aws-terraform/docker-compose.yml" -o "$COMPOSE"; then
     return 0
   fi
   echo "Could not get docker-compose.yml. Run from the mock-exams repo: bash scripts/unix-localstack-up.sh" >&2
@@ -67,16 +68,16 @@ fi
 install_compose_file
 mkdir -p "$LABS"
 
-# Leftover LocalStack-only one-liner used a different container name.
-docker rm -f localstack-localstack-1 mock-aws-terraform-localstack mock-aws-terraform-lab >/dev/null 2>&1 || true
+# Leftover LocalStack-only one-liner / standalone courses UI.
+docker rm -f localstack-localstack-1 mockctl-web mock-aws-terraform-localstack mock-aws-terraform-lab mock-aws-terraform-web >/dev/null 2>&1 || true
 
-echo "Pulling images (LocalStack + lab)..."
+echo "Pulling images (LocalStack + lab + courses UI)..."
 if ! docker compose -f "$COMPOSE" pull; then
-  echo "Image pull failed. If aws-terraform-lab is 401/denied, make the GHCR package Public." >&2
+  echo "Image pull failed. If a GHCR image is 401/denied, make that package Public." >&2
   exit 1
 fi
 
-echo "Starting LocalStack + lab..."
+echo "Starting LocalStack + lab + courses UI..."
 docker compose -f "$COMPOSE" up -d
 
 echo "Waiting for LocalStack health on $URL ..."
@@ -105,21 +106,33 @@ if ! docker inspect -f '{{.State.Running}}' mock-aws-terraform-lab 2>/dev/null |
   exit 1
 fi
 
+COURSE="http://127.0.0.1:8091/aws-terraform/README.md"
+echo "Waiting for courses UI on http://127.0.0.1:8091/ ..."
+ui_ready=0
+ui_deadline=$((SECONDS + 120))
+while (( SECONDS < ui_deadline )); do
+  code=$(curl -sS -o /dev/null -w "%{http_code}" --connect-timeout 3 \
+    "http://127.0.0.1:8091/" 2>/dev/null || echo "000")
+  if [[ "$code" == "200" || "$code" == "301" || "$code" == "302" ]]; then
+    ui_ready=1
+    break
+  fi
+  echo "  still starting..."
+  sleep 2
+done
+
+if [[ "$ui_ready" -ne 1 ]]; then
+  echo "Courses UI not up after 2 min. Check: docker compose -f $COMPOSE logs web" >&2
+  docker compose -f "$COMPOSE" logs --tail 40 web >&2 || true
+  exit 1
+fi
+
 echo
-echo "OK  LocalStack  $URL"
-echo "    course:     http://127.0.0.1:8091/aws-terraform/README.md"
+echo "OK  course:     $COURSE"
+echo "    LocalStack  $URL"
 echo "    health:     $URL/_localstack/health"
 echo "    workdir:    $LABS"
 echo "    lab:        docker compose -f $COMPOSE exec lab bash"
 echo "    terraform:  docker compose -f $COMPOSE exec lab terraform version"
 echo "    stop:       docker compose -f $COMPOSE down"
 echo "    (LocalStack data volume is kept; add -v to wipe)"
-if curl -sf --connect-timeout 2 "http://127.0.0.1:8091/" >/dev/null 2>&1; then
-  echo
-  echo "Open the course:  http://127.0.0.1:8091/aws-terraform/README.md"
-else
-  echo
-  echo "Lessons UI is not running yet. Start it, then open the course URL:"
-  echo "  curl -fsSL https://raw.githubusercontent.com/FedorArbuzov/mockctl-setup/main/unix-courses-ui.sh | bash"
-  echo "  http://127.0.0.1:8091/aws-terraform/README.md"
-fi

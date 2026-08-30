@@ -7,6 +7,7 @@
 #   irm https://raw.githubusercontent.com/FedorArbuzov/mockctl-setup/main/windows-localstack-up.ps1 | iex
 #
 # LocalStack: http://localhost:4566
+# Course:     http://127.0.0.1:8091/aws-terraform/README.md
 # Lab:        docker compose -f $env:USERPROFILE\.mock-exams\localstack\docker-compose.yml exec lab bash
 # Workdir:    ~\aws-labs
 
@@ -42,8 +43,8 @@ function Install-ComposeFile {
     }
     Write-Host "Fetching compose -> $Compose"
     $urls = @(
-        "$ExamsRaw/deploy/aws-terraform/docker-compose.yml",
-        "$RepoRaw/localstack/docker-compose.yml"
+        "$RepoRaw/localstack/docker-compose.yml",
+        "$ExamsRaw/deploy/aws-terraform/docker-compose.yml"
     )
     $ok = $false
     foreach ($u in $urls) {
@@ -67,15 +68,15 @@ if ($LASTEXITCODE -ne 0) { throw "Start Docker Desktop first." }
 Install-ComposeFile
 New-Item -ItemType Directory -Force -Path $Labs | Out-Null
 
-cmd.exe /c "docker rm -f localstack-localstack-1 mock-aws-terraform-localstack mock-aws-terraform-lab >nul 2>&1" | Out-Null
+cmd.exe /c "docker rm -f localstack-localstack-1 mockctl-web mock-aws-terraform-localstack mock-aws-terraform-lab mock-aws-terraform-web >nul 2>&1" | Out-Null
 
-Write-Host "Pulling images (LocalStack + lab)..."
+Write-Host "Pulling images (LocalStack + lab + courses UI)..."
 docker compose -f $Compose pull
 if ($LASTEXITCODE -ne 0) {
-    throw "Image pull failed. If aws-terraform-lab is 401/denied, make the GHCR package Public."
+    throw "Image pull failed. If a GHCR image is 401/denied, make that package Public."
 }
 
-Write-Host "Starting LocalStack + lab..."
+Write-Host "Starting LocalStack + lab + courses UI..."
 docker compose -f $Compose up -d
 if ($LASTEXITCODE -ne 0) { throw "docker compose up failed" }
 
@@ -106,28 +107,34 @@ if ($LASTEXITCODE -ne 0 -or $labRunning -ne "true") {
     throw "Lab container is not running.`n$logs"
 }
 
+$Course = "http://127.0.0.1:8091/aws-terraform/README.md"
+Write-Host "Waiting for courses UI on http://127.0.0.1:8091/ ..."
+$uiDeadline = (Get-Date).AddMinutes(2)
+$uiReady = $false
+while ((Get-Date) -lt $uiDeadline) {
+    try {
+        $ui = Invoke-WebRequest -Uri "http://127.0.0.1:8091/" -UseBasicParsing -TimeoutSec 3
+        if ($ui.StatusCode -ge 200 -and $ui.StatusCode -lt 500) {
+            $uiReady = $true
+            break
+        }
+    } catch {
+        # still starting
+    }
+    Write-Host "  still starting..."
+    Start-Sleep -Seconds 2
+}
+if (-not $uiReady) {
+    $logs = docker compose -f $Compose logs --tail 40 web 2>$null | Out-String
+    throw "Courses UI not up after 2 min.`n$logs"
+}
+
 Write-Host ""
-Write-Host "OK  LocalStack  $Url"
-Write-Host "    course:     http://127.0.0.1:8091/aws-terraform/README.md"
+Write-Host "OK  course:     $Course"
+Write-Host "    LocalStack  $Url"
 Write-Host "    health:     $Url/_localstack/health"
 Write-Host "    workdir:    $Labs"
 Write-Host "    lab:        docker compose -f `"$Compose`" exec lab bash"
 Write-Host "    terraform:  docker compose -f `"$Compose`" exec lab terraform version"
 Write-Host "    stop:       docker compose -f `"$Compose`" down"
 Write-Host "    (LocalStack data volume is kept; add -v to wipe)"
-
-$uiUp = $false
-try {
-    $ui = Invoke-WebRequest -Uri "http://127.0.0.1:8091/" -UseBasicParsing -TimeoutSec 2
-    if ($ui.StatusCode -ge 200 -and $ui.StatusCode -lt 500) { $uiUp = $true }
-} catch {
-    $uiUp = $false
-}
-Write-Host ""
-if ($uiUp) {
-    Write-Host "Open the course:  http://127.0.0.1:8091/aws-terraform/README.md"
-} else {
-    Write-Host "Lessons UI is not running yet. Start it, then open the course URL:"
-    Write-Host "  irm https://raw.githubusercontent.com/FedorArbuzov/mockctl-setup/main/windows-courses-ui.ps1 | iex"
-    Write-Host "  http://127.0.0.1:8091/aws-terraform/README.md"
-}
